@@ -38,8 +38,8 @@ const theme = createTheme()
 export default function Login() {
   const navigate = useNavigate()
   const [user, setUser] = React.useState({
-    email: '',
-    password: '',
+    email: 'hon1311@gmail.com',
+    password: '123456',
   })
   const handlechange = (e) => {
     const key = e.target.name
@@ -113,6 +113,7 @@ export default function Login() {
               name="email"
               autoComplete="email"
               autoFocus
+              value={user.email}
               onChange={handlechange}
             />
             <TextField
@@ -123,6 +124,7 @@ export default function Login() {
               label="Password"
               type="password"
               id="password"
+              value={user.password}
               autoComplete="current-password"
               onChange={handlechange}
             />

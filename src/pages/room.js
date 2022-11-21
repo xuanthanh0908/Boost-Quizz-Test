@@ -1,4 +1,13 @@
-import { Box, Button } from '@mui/material'
+import {
+  Box,
+  Button,
+  TextField,
+  Stack,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+} from '@mui/material'
 import { Container } from '@mui/system'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -20,7 +29,7 @@ const fakeRooms = [
   },
 ]
 export const Context = React.createContext()
-const host = 'http://localhost:9000/pvp'
+const host = `${process.env.REACT_APP_ENDPOINT}/pvp`
 const Room = () => {
   const [currentSocket, setCurrentSocket] = React.useContext(Context)
   const navigate = useNavigate()
@@ -29,25 +38,32 @@ const Room = () => {
   const [user, setUser] = React.useState(userGet ?? null)
   const [data, setData] = React.useState()
   const [loading, setLoading] = React.useState(null)
+  const [category, setCategory] = React.useState('html')
   const socket = React.useRef()
   React.useEffect(() => {
     if (!user) {
       navigate('/login')
     }
   }, [])
-
+  const handleChange = (event) => {
+    setCategory(event.target.value)
+  }
   React.useEffect(() => {
     console.log('On Login')
     socket.current = io(host)
     setCurrentSocket(socket.current)
-    socket.current.emit('login', userGet.username)
+    socket.current.emit('login', {
+      id: userGet.username,
+      username: userGet.username,
+    })
   }, [user])
   React.useEffect(() => {
-    if (loading === false) {
+    if (loading === false && category?.length > 0) {
       navigate('/test', {
         state: {
           room: roomId,
           username: userGet.username,
+          category: category.toLowerCase(),
         },
       })
     }
@@ -74,9 +90,13 @@ const Room = () => {
   }
   const handleClickLoading = () => {
     setLoading(true)
-    socket.current.emit('findopponent', {
-      username: userGet.username,
-    })
+    if (category.length > 0 || category) {
+      socket.current.emit('findopponent', {
+        id: userGet.username,
+        displayname: userGet.username,
+        category: category.toLowerCase(),
+      })
+    } else alert('Please enter your category to find opponent')
   }
   return (
     <div>
@@ -104,13 +124,36 @@ const Room = () => {
             <CircularProgress />
           </Fade>
         </Box>
-        <Button
-          onClick={handleClickLoading}
-          sx={{ marginTop: 2 }}
-          variant="outlined"
-        >
-          Find Opponent
-        </Button>
+        <Stack width="300px" mt={3}>
+          <FormControl>
+            <InputLabel id="demo-simple-select-helper-label">
+              Category
+            </InputLabel>
+            <Select
+              labelId="demo-simple-select-helper-label"
+              id="demo-simple-select-helper"
+              defaultValue={'html'}
+              value={category}
+              onChange={handleChange}
+              label="category"
+            >
+              <MenuItem value={'html'}>HTML</MenuItem>
+              <MenuItem value={'css'}>CSS</MenuItem>
+              <MenuItem value={'c++'}>C++</MenuItem>
+              <MenuItem value={'c'}>C</MenuItem>
+              <MenuItem value={'python'}>PYTHON</MenuItem>
+              <MenuItem value={'javascript'}>JAVASCRIPT</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Button
+            onClick={handleClickLoading}
+            sx={{ marginTop: 2 }}
+            variant="outlined"
+          >
+            Find Opponent
+          </Button>
+        </Stack>
       </Container>
     </div>
   )

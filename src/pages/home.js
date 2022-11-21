@@ -21,14 +21,15 @@ const Home = () => {
   const [currentSelect, setCurrentSelect] = React.useState()
   const [checkList, setChecklist] = React.useState([])
   const { state } = useLocation()
+  const [reached, setReached] = React.useState(false)
   const [mess, setMess] = React.useState([])
-  const { username, room } = state
+  const { username, room, category } = state
   // emit event fetch all quizzs
   React.useEffect(() => {
     currentSocket.emit('streamQuizs', {
       username: username,
-      room: room,
-      category: 'History',
+      roomId: room,
+      category: category,
     })
     currentSocket.on('allQuiz', (data) => {
       const { allData, username } = data
@@ -40,6 +41,7 @@ const Home = () => {
   /// check anwser
   React.useEffect(() => {
     currentSocket.on('statusCheck', (data) => {
+      setReached(true)
       const { status, result, username: identifiedFromServer } = data
       setChecklist((prev) => [
         ...prev,
@@ -90,14 +92,16 @@ const Home = () => {
 
   const handleCheckAnwser = (anwser) => {
     // e.preventDefault()
+    setReached(false)
     setCurrentSelect(anwser)
+
     if (index < quizz.length) {
       currentSocket.emit('checkAnswer', {
         quizId: quizz[index]._id,
         quizIndex: index,
         answer: anwser,
         username: username,
-        room: room,
+        roomId: room,
       })
     }
   }
@@ -107,15 +111,17 @@ const Home = () => {
     currentSocket.disconnect()
     navigate('/')
   }
+  console.log('CHECK INDEX: ', index)
   return (
     <Container
       component="main"
       maxWidth="sm"
       sx={{
         display: 'flex',
-        height: '300px',
+        flex: 1,
         flexDirection: 'column',
         justifyContent: 'center',
+        overflow: 'scroll',
       }}
     >
       <Button
@@ -130,9 +136,7 @@ const Home = () => {
       </Button>
       {checkList.length > 0 &&
         checkList.map((item, i) => <Typography key={i}>{item}</Typography>)}
-      {index === quizz.length - 1 ? (
-        <Typography>End Round</Typography>
-      ) : (
+      {index < quizz.length ? (
         <>
           <List
             sx={{ width: '100%', maxWidth: 360, bgcolor: 'background.paper' }}
@@ -156,12 +160,13 @@ const Home = () => {
           value={data}
           onChange={(e) => setData(e.target.value)}
         /> */}
-            {quizz.length > 0 && (
+            {quizz.length > 0 && index < quizz.length && (
               <Typography component={'h5'}>
                 {quizz[index].questionTitle}
               </Typography>
             )}
             {quizz.length > 0 &&
+              index < quizz.length &&
               quizz[index].questionAnswer?.map((item, i) => (
                 <Button
                   onClick={() => handleCheckAnwser(item)}
@@ -171,7 +176,7 @@ const Home = () => {
                   sx={{ mt: 1 }}
                   variant="contained"
                   color={
-                    status === item && item === currentSelect
+                    status === item && item === currentSelect && reached
                       ? 'success'
                       : currentSelect !== status && item === currentSelect
                       ? 'error'
@@ -183,6 +188,8 @@ const Home = () => {
               ))}
           </Box>
         </>
+      ) : (
+        <Typography>End Round</Typography>
       )}
     </Container>
   )
